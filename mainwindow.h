@@ -9,7 +9,9 @@
 
 #if defined(Q_OS_LINUX)
 
-#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h> // close
+#include <fcntl.h>  // open
 #include <time.h>
 #include <sys/ioctl.h>
 #include <linux/ioctl.h>
@@ -89,6 +91,11 @@ public:
     {
         fd_spi = fd;
     }
+    void set_param(quint8 b, quint32 s)
+    {
+        bits = b;
+        speed = s;
+    }
     bool startSpiFlashErase(int addr, int length);
     bool startSpiFlashWrite(int addr, char * buff, int length);
     bool startSpiFlashRead(int addr, char * buff, int length);
@@ -109,6 +116,8 @@ private:
     int     target_addr;
     char *  target_buff;
     int     target_length;
+    quint8  bits;
+    quint32 speed;
 
     bool transfetSpi(char * write_buff, char * read_buff, int length);
     bool spiFlashWriteEnable();
@@ -153,7 +162,7 @@ private:
     SpiFlashing m_flashThread;
 
     QByteArray m_writeBuff;
-    QByteArray m_readBuff;
+    char * m_readBuff;
 
     int     fd_spi;
     quint32 mode;
@@ -163,6 +172,7 @@ private:
     void activateUI();
     void deactivateUI();
     void uiUpdateHexaView(int start_addr, const char *data, qint64 size);
+    bool transfetSpi(char * write_buff, char * read_buff, int length);
 
 };
 

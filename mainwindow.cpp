@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     mode = 0;
     bits = 8;
     speed = 500000;
+    m_readBuff = Q_NULLPTR;
 
     connect(&m_flashThread, SIGNAL(set_progress(int)),
             this, SLOT(onProgress(int)));
@@ -22,7 +23,6 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(onCanceled()));
     connect(&m_flashThread, SIGNAL(add_hexlog(int, char*,long)),
             this, SLOT(onAppendLog(int,char*,long)));
-
 }
 
 MainWindow::~MainWindow()
@@ -40,6 +40,11 @@ void MainWindow::onFinished()
     qDebug() << "done";
     if(m_flashThread.flash_mode == SpiFlashing::MODE_READ)
     {
+        if(m_readBuff)
+        {
+            delete m_readBuff;
+            m_readBuff = Q_NULLPTR;
+        }
     }
     else if(m_flashThread.flash_mode == SpiFlashing::MODE_WRITE)
     {
@@ -51,6 +56,11 @@ void MainWindow::onFinished()
 
 void MainWindow::onCanceled()
 {
+    if(m_readBuff)
+    {
+        delete m_readBuff;
+        m_readBuff = Q_NULLPTR;
+    }
     activateUI();
 }
 
@@ -121,12 +131,21 @@ void MainWindow::on_btnRead_clicked()
     int address = ui->sbStartAddr->value();
     int target_size = ui->sbSize->value();
 
-    if(m_flashThread.startSpiFlashRead(address, m_readBuff.data(), target_size))
+    m_readBuff = new char[target_size];
+    if(m_flashThread.startSpiFlashRead(address, m_readBuff, target_size))
     {
         ui->progressRW->setMaximum(target_size);
         ui->progressRW->setValue(0);
         ui->pteBinaryView->clear();
         deactivateUI();
+    }
+    else
+    {
+        if(m_readBuff)
+        {
+            delete m_readBuff;
+            m_readBuff = Q_NULLPTR;
+        }
     }
 }
 
@@ -232,20 +251,20 @@ void MainWindow::on_btnOpen_clicked()
     }
     request = mode;
     ret = ioctl(fd_spi, SPI_IOC_WR_MODE32, &mode);
-    if (ret == -1)
+    if (ret < 0)
     {
-        close(fp_spi);
-        fp_spi = -1;
+        ::close(fd_spi);
+        fd_spi = -1;
         qDebug() << "can't set spi mode";
         return;
     }
 
     /* RD is read what mode the device actually is in */
     ret = ioctl(fd_spi, SPI_IOC_RD_MODE32, &mode);
-    if (ret == -1)
+    if (ret < 0)
     {
-        close(fp_spi);
-        fp_spi = -1;
+        ::close(fd_spi);
+        fd_spi = -1;
         qDebug() << "can't get spi mode";
         return;
     }
@@ -255,8 +274,8 @@ void MainWindow::on_btnOpen_clicked()
      */
     if (request != mode)
     {
-        close(fp_spi);
-        fp_spi = -1;
+        ::close(fd_spi);
+        fd_spi = -1;
         qDebug() << "WARNING device does not support requested mode" << request;
         return;
     }
@@ -266,19 +285,19 @@ void MainWindow::on_btnOpen_clicked()
      */
     bits = ui->sbSpiBpw->value();
     ret = ioctl(fd_spi, SPI_IOC_WR_BITS_PER_WORD, &bits);
-    if (ret == -1)
+    if (ret < 0)
     {
-        close(fp_spi);
-        fp_spi = -1;
+        ::close(fd_spi);
+        fd_spi = -1;
         qDebug() << "can't set bits per word";
         return;
     }
 
     ret = ioctl(fd_spi, SPI_IOC_RD_BITS_PER_WORD, &bits);
-    if (ret == -1)
+    if (ret < 0)
     {
-        close(fp_spi);
-        fp_spi = -1;
+        ::close(fd_spi);
+        fd_spi = -1;
         qDebug() << "can't get bits per word";
         return;
     }
@@ -286,21 +305,21 @@ void MainWindow::on_btnOpen_clicked()
     /*
      * max speed hz
      */
-    bits = ui->sbSpiSpeed->value()*1000;
+    speed = ui->sbSpiSpeed->value()*1000;
     ret = ioctl(fd_spi, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
-    if (ret == -1)
+    if (ret < 0)
     {
-        close(fp_spi);
-        fp_spi = -1;
+        ::close(fd_spi);
+        fd_spi = -1;
         qDebug() << "can't set max speed hz";
         return;
     }
 
     ret = ioctl(fd_spi, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
-    if (ret == -1)
+    if (ret < 0)
     {
-        close(fp_spi);
-        fp_spi = -1;
+        ::close(fd_spi);
+        fd_spi = -1;
         qDebug() << "can't get max speed hz";
         return;
     }
@@ -312,6 +331,7 @@ void MainWindow::on_btnOpen_clicked()
     fd_spi = 1;
 #endif
     m_flashThread.set_fd(fd_spi);
+    m_flashThread.set_param(bits, speed);
     ui->cbSpiDevice->setEnabled(false);
     ui->cbCPHA->setEnabled(false);
     ui->cbCPOL->setEnabled(false);
@@ -330,7 +350,7 @@ void MainWindow::on_btnClose_clicked()
 #if defined(Q_OS_LINUX)
     if(fd_spi >= 0)
     {
-        close(fp_spi);
+        ::close(fd_spi);
     }
 #endif
     fd_spi = -1;
@@ -373,9 +393,49 @@ void MainWindow::on_btnSpiTestExecute_clicked()
 #endif
 }
 
+bool MainWindow::transfetSpi(char *write_buff, char *read_buff, int length)
+{
+    if(fd_spi < 0)
+    {
+        qDebug() << "spi device not opened";
+        return false;
+    }
+#if defined(Q_OS_LINUX)
+    int ret;
+    struct spi_ioc_transfer tr = {
+        .tx_buf = (unsigned long)write_buff,
+        .rx_buf = (unsigned long)read_buff,
+        .len = length,
+        .speed_hz = speed,
+        .delay_usecs = 1000,
+        .bits_per_word = bits,
+        .cs_change = 0,
+        .tx_nbits = 0,
+        .rx_nbits = 0,
+        .pad = 0,
+    };
+
+    if(write_buff==0)
+    {
+        char test[8] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88};
+        tr.tx_buf = (unsigned long)test;
+    }
+
+    ret = ioctl(fd_spi, SPI_IOC_MESSAGE(1), &tr);
+    if (ret < 0)
+    {
+        qDebug() << "can't send spi message";
+        return false;
+    }
+#endif
+    return true;
+}
 
 
 
+/***********************/
+//
+/***********************/
 
 bool SpiFlashing::transfetSpi(char *write_buff, char *read_buff, int length)
 {
@@ -385,20 +445,22 @@ bool SpiFlashing::transfetSpi(char *write_buff, char *read_buff, int length)
         return false;
     }
 #if defined(Q_OS_LINUX)
+    int ret;
     struct spi_ioc_transfer tr = {
         .tx_buf = (unsigned long)write_buff,
         .rx_buf = (unsigned long)read_buff,
         .len = length,
-        .delay_usecs = 1000,
         .speed_hz = speed,
+        .delay_usecs = 1000,
         .bits_per_word = bits,
+        .cs_change = 0,
+        .tx_nbits = 0,
+        .rx_nbits = 0,
+        .pad = 0,
     };
 
-    tr.tx_nbits = 8;
-    tr.rx_nbits = 8;
-
     ret = ioctl(fd_spi, SPI_IOC_MESSAGE(1), &tr);
-    if (ret < 1)
+    if (ret < 0)
     {
         qDebug() << "can't send spi message";
         return false;
