@@ -38,6 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
     {
         header->setSectionResizeMode(cnt,QHeaderView::ResizeToContents);
     }
+    header = ui->tblI2cDevCheck->verticalHeader();
+    header->setVisible(true);
 
     ui->tabWidgetI2cAction->setCurrentIndex(0);
     ui->tabWidgetI2cAction->setEnabled(false);
@@ -72,6 +74,9 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+
+/***********************************/
 
 
 void MainWindow::activateUI()

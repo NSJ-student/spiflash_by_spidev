@@ -160,7 +160,6 @@ public:
     bool startI2cCheck(int fd);
     bool startI2cFlashRW(int fd, int id, QStringList &list);
 
-
 signals:
     void set_check(int row, int col, bool exist);
     void finished();

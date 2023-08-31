@@ -612,7 +612,7 @@
            </sizepolicy>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_2">
            <attribute name="title">
@@ -962,7 +962,7 @@ QTableWidget::item:selected {
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../K6400VQD_CONTROL/icons.qrc">
+                    <iconset>
                      <normaloff>:/icon/icon/play.png</normaloff>:/icon/icon/play.png</iconset>
                    </property>
                   </widget>
@@ -980,7 +980,7 @@ QTableWidget::item:selected {
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../K6400VQD_CONTROL/icons.qrc">
+                    <iconset>
                      <normaloff>:/icon/icon/plus.png</normaloff>:/icon/icon/plus.png</iconset>
                    </property>
                   </widget>
@@ -991,7 +991,7 @@ QTableWidget::item:selected {
                     <string>...</string>
                    </property>
                    <property name="icon">
-                    <iconset resource="../K6400VQD_CONTROL/icons.qrc">
+                    <iconset>
                      <normaloff>:/icon/icon/minus.png</normaloff>:/icon/icon/minus.png</iconset>
                    </property>
                   </widget>
@@ -1047,8 +1047,6 @@ QTableWidget::item:selected {
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <resources>
-  <include location="../K6400VQD_CONTROL/icons.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>
