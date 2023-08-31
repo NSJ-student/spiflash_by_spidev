@@ -128,6 +128,55 @@ private:
 
 };
 
+class I2cWork : public QThread
+{
+    Q_OBJECT
+public:
+    enum Mode {
+        MODE_NONE,
+        MODE_RW,
+        MODE_CHECK
+    };
+
+    I2cWork(QObject *parent = Q_NULLPTR) :
+        QThread(parent)
+    {
+        i2c_mode = MODE_NONE;
+        fd_i2c = -1;
+    }
+    ~I2cWork()
+    {
+        this->terminate();
+    }
+
+    void set_fd(int fd)
+    {
+        fd_i2c = fd;
+    }
+    void set_mode(Mode mod)
+    {
+        i2c_mode = mod;
+    }
+    bool startI2cCheck(int fd);
+    bool startI2cFlashRW(int fd, int id, QStringList &list);
+
+
+signals:
+    void set_check(int row, int col, bool exist);
+    void finished();
+    void canceled();
+    void set_i2c_log(const QString &);
+
+private Q_SLOTS:
+    void run();
+
+private:
+    Mode    i2c_mode;
+    int     fd_i2c;
+    int     slave_id;
+    QStringList i2cList;
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -141,6 +190,11 @@ public slots:
     void onFinished();
     void onCanceled();
     void onAppendLog(int start_addr, char *data, long size);
+
+    void onI2cChecked(int row, int col, bool exist);
+    void onI2cWorkFinished();
+    void onI2CworkCanceled();
+    void onI2cLog(const QString &message);
 
 private slots:
     void on_btnWrite_clicked();
@@ -157,10 +211,33 @@ private slots:
 
     void on_btnClear_clicked();
 
+    void on_btnI2cDevOpen_clicked();
+
+    void on_btnI2cAddrCheck_clicked();
+
+    void on_btnI2cAddrClear_clicked();
+
+    void on_btnI2cUnitExecute_clicked();
+
+    void on_rbWriteI2C_clicked(bool checked);
+
+    void on_rbReadI2C_clicked(bool checked);
+
+    void on_btnI2cSeqExecute_clicked();
+
+    void on_btnAddI2CData_clicked();
+
+    void on_btnRemoveI2CData_clicked();
+
+    void on_btnSaveI2CData_clicked();
+
+    void on_btnLoadI2CData_clicked();
+
 private:
     Ui::MainWindow *ui;
-    SpiFlashing m_flashThread;
 
+    // SPI working
+    SpiFlashing m_flashThread;
     QByteArray m_writeBuff;
     char * m_readBuff;
 
@@ -168,6 +245,11 @@ private:
     quint32 mode;
     quint8  bits;
     quint32 speed;
+
+    // I2C working
+    int m_i2cFd;
+    I2cWork m_i2cWork;
+
 
     void activateUI();
     void deactivateUI();

@@ -1,6 +1,15 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#if defined(Q_OS_LINUX)
+#include <unistd.h> // close
+#include <fcntl.h>  // open
+#include <sys/ioctl.h>
+#include <errno.h>
+#include <linux/i2c-dev.h>
+#include <linux/i2c.h>
+#endif
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -23,6 +32,40 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(onCanceled()));
     connect(&m_flashThread, SIGNAL(add_hexlog(int, char*,long)),
             this, SLOT(onAppendLog(int,char*,long)));
+
+    QHeaderView* header = ui->tblI2cDevCheck->horizontalHeader();
+    for(int cnt=0; cnt<16; cnt++)
+    {
+        header->setSectionResizeMode(cnt,QHeaderView::ResizeToContents);
+    }
+
+    ui->tabWidgetI2cAction->setCurrentIndex(0);
+    ui->tabWidgetI2cAction->setEnabled(false);
+
+    connect(&m_i2cWork, SIGNAL(set_check(int,int,bool)),
+            this, SLOT(onI2cChecked(int,int,bool)));
+    connect(&m_i2cWork, SIGNAL(set_i2c_log(const QString&)),
+            this, SLOT(onI2cLog(const QString&)));
+    connect(&m_i2cWork, SIGNAL(canceled()),
+            this, SLOT(onI2CworkCanceled()));
+    connect(&m_i2cWork, SIGNAL(finished()),
+            this, SLOT(onI2cWorkFinished()));
+
+    m_i2cFd = -1;
+    for(int row=0; row<8; row++)
+    {
+        for(int col=0; col<16; col++)
+        {
+            QTableWidgetItem * widget;
+            widget = ui->tblI2cDevCheck->item(row, col);
+            if(widget == Q_NULLPTR)
+            {
+                widget = new QTableWidgetItem();
+                widget->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+                ui->tblI2cDevCheck->setItem(row, col, widget);
+            }
+        }
+    }
 }
 
 MainWindow::~MainWindow()
@@ -30,44 +73,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::onProgress(int current)
-{
-    ui->progressRW->setValue(current);
-}
-
-void MainWindow::onFinished()
-{
-    qDebug() << "done";
-    if(m_flashThread.flash_mode == SpiFlashing::MODE_READ)
-    {
-        if(m_readBuff)
-        {
-            delete m_readBuff;
-            m_readBuff = Q_NULLPTR;
-        }
-    }
-    else if(m_flashThread.flash_mode == SpiFlashing::MODE_WRITE)
-    {
-        int address = ui->sbStartAddr->value();
-        uiUpdateHexaView(address, m_writeBuff.data(), m_writeBuff.size());
-    }
-    activateUI();
-}
-
-void MainWindow::onCanceled()
-{
-    if(m_readBuff)
-    {
-        delete m_readBuff;
-        m_readBuff = Q_NULLPTR;
-    }
-    activateUI();
-}
-
-void MainWindow::onAppendLog(int start_addr, char *data, long size)
-{
-    uiUpdateHexaView(start_addr, data, size);
-}
 
 void MainWindow::activateUI()
 {
@@ -80,6 +85,13 @@ void MainWindow::deactivateUI()
     ui->tab_flash->setEnabled(false);
     ui->gbSpiTest->setEnabled(false);
 }
+
+
+
+
+/***********************/
+//  SPI
+/***********************/
 
 void MainWindow::on_btnWrite_clicked()
 {
@@ -125,7 +137,6 @@ void MainWindow::on_btnWrite_clicked()
 
 }
 
-
 void MainWindow::on_btnRead_clicked()
 {
     int address = ui->sbStartAddr->value();
@@ -148,7 +159,6 @@ void MainWindow::on_btnRead_clicked()
         }
     }
 }
-
 
 void MainWindow::on_btnErase_clicked()
 {
@@ -210,12 +220,10 @@ void MainWindow::uiUpdateHexaView(int start_addr, const char *data, qint64 size)
     }
 }
 
-
 void MainWindow::on_btnClear_clicked()
 {
     ui->pteBinaryView->clear();
 }
-
 
 void MainWindow::on_btnOpen_clicked()
 {
@@ -344,7 +352,6 @@ void MainWindow::on_btnOpen_clicked()
     ui->gbSpiTest->setEnabled(true);
 }
 
-
 void MainWindow::on_btnClose_clicked()
 {
 #if defined(Q_OS_LINUX)
@@ -366,7 +373,6 @@ void MainWindow::on_btnClose_clicked()
     ui->tab_flash->setEnabled(false);
     ui->gbSpiTest->setEnabled(false);
 }
-
 
 void MainWindow::on_btnSpiTestExecute_clicked()
 {
@@ -431,10 +437,360 @@ bool MainWindow::transfetSpi(char *write_buff, char *read_buff, int length)
     return true;
 }
 
+/***********************************/
+
+void MainWindow::onProgress(int current)
+{
+    ui->progressRW->setValue(current);
+}
+
+void MainWindow::onFinished()
+{
+    qDebug() << "done";
+    if(m_flashThread.flash_mode == SpiFlashing::MODE_READ)
+    {
+        if(m_readBuff)
+        {
+            delete m_readBuff;
+            m_readBuff = Q_NULLPTR;
+        }
+    }
+    else if(m_flashThread.flash_mode == SpiFlashing::MODE_WRITE)
+    {
+        int address = ui->sbStartAddr->value();
+        uiUpdateHexaView(address, m_writeBuff.data(), m_writeBuff.size());
+    }
+    activateUI();
+}
+
+void MainWindow::onCanceled()
+{
+    if(m_readBuff)
+    {
+        delete m_readBuff;
+        m_readBuff = Q_NULLPTR;
+    }
+    activateUI();
+}
+
+void MainWindow::onAppendLog(int start_addr, char *data, long size)
+{
+    uiUpdateHexaView(start_addr, data, size);
+}
+
+
 
 
 /***********************/
-//
+//  I2C
+/***********************/
+
+void MainWindow::on_btnI2cDevOpen_clicked()
+{
+#if defined(Q_OS_LINUX)
+    if(ui->tabWidgetI2cAction->isEnabled())
+    {
+        ::close(m_i2cFd);
+
+        m_i2cFd = -1;
+        ui->tabWidgetI2cAction->setEnabled(false);
+        ui->btnI2cDevOpen->setText("Open");
+    }
+    else
+    {
+        const char * devName = ui->cbI2cDev->currentText().toStdString().data();
+        m_i2cFd = open(devName, O_RDWR);
+        if (m_i2cFd < 0)
+        {
+            qDebug("Can't open file %s: %s\r\n",
+                   devName, strerror(errno));
+            return;
+        }
+
+        ui->tabWidgetI2cAction->setEnabled(true);
+        ui->btnI2cDevOpen->setText("Close");
+    }
+#endif
+}
+
+void MainWindow::on_btnI2cAddrCheck_clicked()
+{
+    if(m_i2cFd < 0)
+    {
+        qDebug() << "invalid i2d fd";
+        return;
+    }
+
+#if defined(Q_OS_LINUX)
+    if(m_i2cWork.isRunning())
+    {
+        qDebug() << "i2c working";
+        return;
+    }
+
+    this->setEnabled(false);
+    if(!m_i2cWork.startI2cCheck(m_i2cFd))
+    {
+        this->setEnabled(true);
+    }
+#endif
+}
+
+void MainWindow::on_btnI2cAddrClear_clicked()
+{
+    for(int addr=0; addr<128; addr++)
+    {
+        int row = addr/16;
+        int col = addr%16;
+        QTableWidgetItem * widget;
+        widget = ui->tblI2cDevCheck->item(row, col);
+        if(widget)
+        {
+            widget->setText("");
+        }
+    }
+}
+
+void MainWindow::on_btnI2cUnitExecute_clicked()
+{
+    if(ui->rbReadI2C->isChecked())
+    {
+        if(m_i2cFd < 0)
+        {
+            qDebug() << "invalid i2d fd";
+            return;
+        }
+
+#if defined(Q_OS_LINUX)
+        ioctl(m_i2cFd, I2C_SLAVE, ui->sbI2cAddr->value());
+
+        QByteArray sendData = QByteArray::fromHex(ui->lineWriteDate->text().toLatin1());
+        if(sendData.count() > 0)
+        {
+            int rval = write(m_i2cFd, sendData.data(), sendData.count());
+            if (rval < 0) {
+                qDebug("Writing error! (%lX): %s\r\n",
+                       ui->sbI2cAddr->value(),
+                       strerror(errno));
+                return;
+            }
+        }
+
+        int read_count = ui->sbI2CReadCount->value();
+        char read_data[read_count];
+        int rval = read(m_i2cFd, read_data, read_count);
+        if (rval < 0)
+        {
+            qDebug("Reading error! (%lX): %s\r\n",
+                   ui->sbI2cAddr->value(),
+                   strerror(errno));
+            return;
+        }
+
+        ui->lineReadData->setText(QString(QByteArray(read_data,read_count).toHex(' ').toUpper()));
+        qDebug() << "i2c read done";
+#endif
+    }
+    else
+    {
+        if(m_i2cFd < 0)
+        {
+            qDebug() << "invalid i2d fd";
+            return;
+        }
+
+#if defined(Q_OS_LINUX)
+        ioctl(m_i2cFd, I2C_SLAVE, ui->sbI2cAddr->value());
+
+        QByteArray sendData = QByteArray::fromHex(ui->lineWriteDate->text().toLatin1());
+        if(sendData.count() > 0)
+        {
+            int rval = write(m_i2cFd, sendData.data(), sendData.count());
+            if (rval < 0) {
+                qDebug("Writing error! (%lX): %s\r\n",
+                       ui->sbI2cAddr->value(),
+                       strerror(errno));
+                return;
+            }
+
+            qDebug() << "i2c write done";
+        }
+#endif
+    }
+}
+
+void MainWindow::on_rbWriteI2C_clicked(bool checked)
+{
+    if(checked)
+    {
+        ui->widgetReadData->hide();
+    }
+}
+
+void MainWindow::on_rbReadI2C_clicked(bool checked)
+{
+    if(checked)
+    {
+        ui->widgetReadData->show();
+    }
+}
+
+void MainWindow::on_btnI2cSeqExecute_clicked()
+{
+    QStringList rwList;
+    for(int cnt=0; cnt<ui->listI2cSequence->count(); cnt++)
+    {
+        QListWidgetItem * item = ui->listI2cSequence->item(cnt);
+        rwList.append(item->text());
+    }
+
+    this->setEnabled(false);
+    if(!m_i2cWork.startI2cFlashRW(m_i2cFd, ui->sbI2cAddr->value(), rwList))
+    {
+        this->setEnabled(true);
+    }
+}
+
+void MainWindow::on_btnAddI2CData_clicked()
+{
+    QListWidgetItem * item = new QListWidgetItem("New");
+    item->setFlags(item->flags() |  Qt::ItemIsEditable);
+    if((ui->listI2cSequence->count()>0) &&
+            (ui->listI2cSequence->selectedItems().count()>0))
+    {
+        int row = ui->listI2cSequence->row(ui->listI2cSequence->selectedItems().at(0));
+        if(row >= 0)
+        {
+            ui->listI2cSequence->insertItem(row+1, item);
+        }
+        else
+        {
+            ui->listI2cSequence->addItem(item);
+        }
+    }
+    else
+    {
+        ui->listI2cSequence->addItem(item);
+    }
+}
+
+void MainWindow::on_btnRemoveI2CData_clicked()
+{
+    foreach(QListWidgetItem* item, ui->listI2cSequence->selectedItems())
+    {
+        int row = ui->listI2cSequence->row(item);
+        delete ui->listI2cSequence->takeItem(row);
+    }
+}
+
+void MainWindow::on_btnSaveI2CData_clicked()
+{
+    QString save_path =
+             QFileDialog::getSaveFileName(
+                this,
+                ("Select Save File"),
+                Q_NULLPTR,
+                "I2C File (*.i2c);;All Files (*.*)");
+
+    if(!save_path.isNull() && !save_path.isEmpty())
+    {
+        QFile file(save_path);
+        bool ret = file.open(QIODevice::WriteOnly);
+        if(!ret)
+        {
+            qDebug() <<  QString("i2c file open fail - %1")
+                               .arg(save_path);
+            return;
+        }
+
+        QTextStream saveStream(&file);
+
+        for(int cnt=0; cnt<ui->listI2cSequence->count(); cnt++)
+        {
+            QListWidgetItem * item = ui->listI2cSequence->item(cnt);
+            saveStream << item->text() << endl;
+        }
+
+        file.close();
+
+        qDebug() << QString("save i2c seq complete: %1").arg(save_path);
+    }
+}
+
+void MainWindow::on_btnLoadI2CData_clicked()
+{
+    QString filePath =
+             QFileDialog::getOpenFileName(
+                this,
+                ("Select Open File"),
+                Q_NULLPTR,
+                "I2C File (*.i2c);;All Files (*.*)");
+
+    if(!filePath.isNull() && !filePath.isEmpty())
+    {
+        QFile openFile(filePath);
+        bool ret = openFile.open(QIODevice::ReadOnly);
+        if(!ret)
+        {
+            qDebug() << QString("i2c file open fail - %1")
+                               .arg(filePath);
+            return;
+        }
+
+        QTextStream loadStream(&openFile);
+
+        ui->listI2cSequence->clear();
+        while(1)
+        {
+            QString line = loadStream.readLine();
+            if(line.isEmpty())
+            {
+                break;
+            }
+
+            QListWidgetItem * item = new QListWidgetItem(line);
+            item->setFlags(item->flags() |  Qt::ItemIsEditable);
+            ui->listI2cSequence->addItem(item);
+        }
+
+        openFile.close();
+        qDebug() << QString("i2c setting load");
+    }
+}
+
+/***********************************/
+
+void MainWindow::onI2cChecked(int row, int col, bool exist)
+{
+    QTableWidgetItem * widget = ui->tblI2cDevCheck->item(row, col);
+    if(widget)
+    {
+        QString str_result = (exist)?"OO":"--";
+        widget->setText(str_result);
+    }
+}
+
+void MainWindow::onI2cWorkFinished()
+{
+    this->setEnabled(true);
+}
+
+void MainWindow::onI2CworkCanceled()
+{
+    this->setEnabled(true);
+}
+
+void MainWindow::onI2cLog(const QString &message)
+{
+    qDebug() << message;
+}
+
+
+
+
+
+/***********************/
+//  SPI flashing thread
 /***********************/
 
 bool SpiFlashing::transfetSpi(char *write_buff, char *read_buff, int length)
@@ -576,6 +932,11 @@ bool SpiFlashing::spiFlashRead(int addr, char *buff, int length)
 {
     char tempBuff[length+4];
 
+//    memset(tempBuff, 0, length+4);
+    for(int cnt=4; cnt<length; cnt++)
+    {
+        tempBuff[cnt] = cnt;
+    }
     tempBuff[0] = SPIFLASH_READ;
     tempBuff[1] = (char)(addr >> 16);
     tempBuff[2] = (char)(addr >> 8);
@@ -733,6 +1094,140 @@ void SpiFlashing::run()
             return;
         }
     }
+
+    emit finished();
+}
+
+
+
+/***********************/
+//  I2C working thread
+/***********************/
+
+bool I2cWork::startI2cCheck(int fd)
+{
+    if(this->isRunning())
+    {
+        qDebug() << "i2c working";
+        return false;
+    }
+
+    fd_i2c = fd;
+    i2c_mode = I2cWork::MODE_CHECK;
+    this->start();
+    return true;
+}
+
+bool I2cWork::startI2cFlashRW(int fd, int id, QStringList &list)
+{
+    if(this->isRunning())
+    {
+        qDebug() << "i2c working";
+        return false;
+    }
+
+    i2cList = list;
+    fd_i2c = fd;
+    i2c_mode = I2cWork::MODE_RW;
+    slave_id = id;
+    this->start();
+    return true;
+}
+
+void I2cWork::run()
+{
+    if(fd_i2c<0)
+    {
+        emit canceled();
+        return;
+    }
+
+#if defined(Q_OS_LINUX)
+    if(i2c_mode == MODE_CHECK)
+    {
+        for(int addr=0; addr<128; addr++)
+        {
+            ioctl(fd_i2c, I2C_SLAVE, addr);
+            char data= 0;
+            int rval = write(fd_i2c, &data, 1);
+            int row = addr/16;
+            int col = addr%16;
+
+            emit set_check(row, col, (rval>=0));
+        }
+    }
+    else if(i2c_mode == MODE_RW)
+    {
+        ioctl(fd_i2c, I2C_SLAVE, slave_id);
+
+        foreach(QString item, i2cList)
+        {
+            QStringList splt = item.split("/");
+            if(splt.count()<2)
+            {
+                continue;
+            }
+            if(splt.at(0) == "w")
+            {
+                QByteArray sendData = QByteArray::fromHex(splt.at(1).toLatin1());
+                if(sendData.count() > 0)
+                {
+                    int rval = write(fd_i2c, sendData.data(), sendData.count());
+                    if (rval < 0) {
+                        emit set_i2c_log(QString("Writing error! (%1): %2")
+                               .arg(slave_id, 2, 16, QChar('0'))
+                               .arg(strerror(errno)));
+                        continue;
+                    }
+                    emit set_i2c_log(QString("Write(%1): %2")
+                           .arg(slave_id, 2, 16, QChar('0'))
+                           .arg(QString(sendData.toHex(' ').toUpper())));
+                }
+            }
+            else if(splt.at(0) == "r")
+            {
+                bool ok;
+                int read_count =  splt.at(1).toUInt(&ok, 10);
+                if(!ok || (read_count<=0))
+                {
+                    emit set_i2c_log(QString("Read error! (%1): read count error")
+                           .arg(slave_id, 2, 16, QChar('0')));
+                    continue;
+                }
+                char read_data[read_count];
+                int rval = read(fd_i2c, read_data, read_count);
+                if (rval < 0) {
+                    emit set_i2c_log(QString("Read error! (%1): %2")
+                           .arg(slave_id, 2, 16, QChar('0'))
+                           .arg(strerror(errno)));
+                    continue;
+                }
+
+                emit set_i2c_log(QString("Read(%1): %2")
+                       .arg(slave_id, 2, 16, QChar('0'))
+                       .arg(QString(QByteArray(read_data,read_count).toHex(' ').toUpper())));
+            }
+            else if(splt.at(0) == "d")
+            {
+                bool ok;
+                int delay_ms =  splt.at(1).toUInt(&ok, 10);
+                if(!ok || (delay_ms<=0))
+                {
+                    emit set_i2c_log(QString("Delay error! (%1): delay count error")
+                           .arg(slave_id, 2, 16, QChar('0')));
+                    continue;
+                }
+
+                QThread::msleep(delay_ms);
+                emit set_i2c_log(QString("Delay: %1").arg(delay_ms));
+            }
+            else
+            {
+                qDebug() << "invalid cmd:" << item;
+            }
+        }
+    }
+#endif
 
     emit finished();
 }

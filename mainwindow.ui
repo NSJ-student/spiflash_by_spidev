@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>528</width>
-    <height>450</height>
+    <width>610</width>
+    <height>587</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -511,12 +511,544 @@
         </item>
        </layout>
       </widget>
+      <widget class="QWidget" name="tab_i2c">
+       <attribute name="title">
+        <string>I2C TEST</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
+        <item>
+         <widget class="QFrame" name="frame_6">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <item>
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>I2C device</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="cbI2cDev">
+             <item>
+              <property name="text">
+               <string>/dev/i2c-0</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>/dev/i2c-1</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>/dev/i2c-2</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>/dev/i2c-3</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>/dev/i2c-4</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>/dev/i2c-5</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>/dev/i2c-6</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>/dev/i2c-7</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>/dev/i2c-8</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnI2cDevOpen">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Open</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTabWidget" name="tabWidgetI2cAction">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>2</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="currentIndex">
+           <number>1</number>
+          </property>
+          <widget class="QWidget" name="tab_2">
+           <attribute name="title">
+            <string>ID CHECK</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <item>
+             <widget class="QFrame" name="frame_3">
+              <property name="frameShape">
+               <enum>QFrame::NoFrame</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Raised</enum>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_7">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QPushButton" name="btnI2cAddrCheck">
+                 <property name="text">
+                  <string>CHECK</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btnI2cAddrClear">
+                 <property name="text">
+                  <string>CLEAR</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTableWidget" name="tblI2cDevCheck">
+              <property name="font">
+               <font>
+                <family>Courier New</family>
+                <pointsize>10</pointsize>
+               </font>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">QHeaderView::section {
+	background-color: rgb(225, 225, 225);
+	color:#000000;
+}
+QTableWidget::item:selected {
+	background-color: rgba(0, 55, 255, 200);
+	color:#FFFFFF;
+}
+</string>
+              </property>
+              <property name="editTriggers">
+               <set>QAbstractItemView::NoEditTriggers</set>
+              </property>
+              <property name="showDropIndicator" stdset="0">
+               <bool>false</bool>
+              </property>
+              <property name="dragDropOverwriteMode">
+               <bool>false</bool>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::SingleSelection</enum>
+              </property>
+              <attribute name="horizontalHeaderDefaultSectionSize">
+               <number>50</number>
+              </attribute>
+              <attribute name="horizontalHeaderMinimumSectionSize">
+               <number>32</number>
+              </attribute>
+              <attribute name="verticalHeaderVisible">
+               <bool>false</bool>
+              </attribute>
+              <attribute name="verticalHeaderDefaultSectionSize">
+               <number>32</number>
+              </attribute>
+              <row>
+               <property name="text">
+                <string>00</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>10</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>20</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>30</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>40</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>50</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>60</string>
+               </property>
+              </row>
+              <row>
+               <property name="text">
+                <string>70</string>
+               </property>
+              </row>
+              <column>
+               <property name="text">
+                <string>00</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>01</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>02</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>03</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>04</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>05</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>06</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>07</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>08</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>09</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>0A</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>0B</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>0C</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>0D</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>0E</string>
+               </property>
+              </column>
+              <column>
+               <property name="text">
+                <string>0F</string>
+               </property>
+              </column>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_3">
+           <attribute name="title">
+            <string>I2C RW</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>I2c Slave ID</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="sbI2cAddr">
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="buttonSymbols">
+               <enum>QAbstractSpinBox::NoButtons</enum>
+              </property>
+              <property name="prefix">
+               <string>0x</string>
+              </property>
+              <property name="maximum">
+               <number>127</number>
+              </property>
+              <property name="displayIntegerBase">
+               <number>16</number>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0" colspan="2">
+             <widget class="QFrame" name="frame_5">
+              <property name="frameShape">
+               <enum>QFrame::StyledPanel</enum>
+              </property>
+              <property name="frameShadow">
+               <enum>QFrame::Raised</enum>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_5">
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="lineWriteDate"/>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_12">
+                 <property name="text">
+                  <string>Write Data</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="2">
+                <widget class="QPushButton" name="btnI2cUnitExecute">
+                 <property name="text">
+                  <string>Execute</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0" colspan="3">
+                <layout class="QHBoxLayout" name="horizontalLayout_10">
+                 <item>
+                  <widget class="QRadioButton" name="rbWriteI2C">
+                   <property name="text">
+                    <string>Write Action</string>
+                   </property>
+                   <property name="checked">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QRadioButton" name="rbReadI2C">
+                   <property name="text">
+                    <string>Read Action</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item row="2" column="1">
+                <widget class="QFrame" name="widgetReadData">
+                 <layout class="QHBoxLayout" name="horizontalLayout_8">
+                  <item>
+                   <widget class="QLineEdit" name="lineReadData"/>
+                  </item>
+                  <item>
+                   <widget class="QSpinBox" name="sbI2CReadCount">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignCenter</set>
+                    </property>
+                    <property name="buttonSymbols">
+                     <enum>QAbstractSpinBox::NoButtons</enum>
+                    </property>
+                    <property name="minimum">
+                     <number>1</number>
+                    </property>
+                    <property name="maximum">
+                     <number>256</number>
+                    </property>
+                    <property name="value">
+                     <number>1</number>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="5" column="0" colspan="2">
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <item>
+               <widget class="QListWidget" name="listI2cSequence"/>
+              </item>
+              <item>
+               <widget class="QFrame" name="frame_4">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::NoFrame</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_9">
+                 <item>
+                  <widget class="QToolButton" name="btnI2cSeqExecute">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../K6400VQD_CONTROL/icons.qrc">
+                     <normaloff>:/icon/icon/play.png</normaloff>:/icon/icon/play.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="Line" name="line_3">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="btnAddI2CData">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../K6400VQD_CONTROL/icons.qrc">
+                     <normaloff>:/icon/icon/plus.png</normaloff>:/icon/icon/plus.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="btnRemoveI2CData">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                   <property name="icon">
+                    <iconset resource="../K6400VQD_CONTROL/icons.qrc">
+                     <normaloff>:/icon/icon/minus.png</normaloff>:/icon/icon/minus.png</iconset>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="btnSaveI2CData">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QToolButton" name="btnLoadI2CData">
+                   <property name="text">
+                    <string>...</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="verticalSpacer_2">
+                   <property name="orientation">
+                    <enum>Qt::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="4" column="0" colspan="2">
+             <widget class="Line" name="line_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <resources/>
+ <resources>
+  <include location="../K6400VQD_CONTROL/icons.qrc"/>
+ </resources>
  <connections/>
 </ui>
