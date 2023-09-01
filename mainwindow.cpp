@@ -98,6 +98,28 @@ void MainWindow::deactivateUI()
 //  SPI
 /***********************/
 
+void MainWindow::on_rbTx2SPI_clicked(bool checked)
+{
+    if(checked)
+    {
+        ui->cbSpiDevice->clear();
+        ui->cbSpiDevice->addItem("/dev/spidev3.0");
+        ui->cbSpiDevice->addItem("/dev/spidev3.1");
+    }
+}
+
+void MainWindow::on_rbOrinSPI_clicked(bool checked)
+{
+    if(checked)
+    {
+        ui->cbSpiDevice->clear();
+        ui->cbSpiDevice->addItem("/dev/spidev0.0");
+        ui->cbSpiDevice->addItem("/dev/spidev0.1");
+        ui->cbSpiDevice->addItem("/dev/spidev2.0");
+        ui->cbSpiDevice->addItem("/dev/spidev2.1");
+    }
+}
+
 void MainWindow::on_btnWrite_clicked()
 {
     QString path = QFileDialog::getOpenFileName(

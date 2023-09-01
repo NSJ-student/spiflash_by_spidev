@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -52,7 +52,14 @@
            <string>SPI Setting</string>
           </property>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="1" column="1">
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>SPI Mode</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
             <layout class="QHBoxLayout" name="horizontalLayout_2">
              <item>
               <widget class="QCheckBox" name="cbCPHA">
@@ -77,17 +84,7 @@
              </item>
             </layout>
            </item>
-           <item row="2" column="1">
-            <widget class="QSpinBox" name="sbSpiBpw">
-             <property name="minimum">
-              <number>1</number>
-             </property>
-             <property name="value">
-              <number>8</number>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
+           <item row="1" column="1">
             <widget class="QComboBox" name="cbSpiDevice">
              <item>
               <property name="text">
@@ -101,21 +98,38 @@
              </item>
             </widget>
            </item>
-           <item row="0" column="0">
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>Speed</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="sbSpiBpw">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="value">
+              <number>8</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
             <widget class="QLabel" name="label_3">
              <property name="text">
               <string>SPI Device</string>
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
+           <item row="3" column="0">
             <widget class="QLabel" name="label_5">
              <property name="text">
               <string>Bits per Word</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
+           <item row="4" column="1">
             <widget class="QSpinBox" name="sbSpiSpeed">
              <property name="suffix">
               <string>KHz</string>
@@ -131,21 +145,7 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_6">
-             <property name="text">
-              <string>Speed</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>SPI Mode</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0" colspan="2">
+           <item row="5" column="0" colspan="2">
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <item alignment="Qt::AlignRight">
               <widget class="QPushButton" name="btnOpen">
@@ -164,6 +164,27 @@
               <widget class="QPushButton" name="btnClose">
                <property name="text">
                 <string>Close</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="0" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_11">
+             <item>
+              <widget class="QRadioButton" name="rbTx2SPI">
+               <property name="text">
+                <string>Jetson TX2</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="rbOrinSPI">
+               <property name="text">
+                <string>Jetson ORIN</string>
                </property>
               </widget>
              </item>
@@ -685,11 +706,11 @@ QTableWidget::item:selected {
               <property name="selectionMode">
                <enum>QAbstractItemView::SingleSelection</enum>
               </property>
-              <attribute name="horizontalHeaderDefaultSectionSize">
-               <number>50</number>
-              </attribute>
               <attribute name="horizontalHeaderMinimumSectionSize">
                <number>32</number>
+              </attribute>
+              <attribute name="horizontalHeaderDefaultSectionSize">
+               <number>50</number>
               </attribute>
               <attribute name="verticalHeaderVisible">
                <bool>false</bool>

@@ -196,6 +196,10 @@ public slots:
     void onI2cLog(const QString &message);
 
 private slots:
+    void on_rbTx2SPI_clicked(bool checked);
+
+    void on_rbOrinSPI_clicked(bool checked);
+
     void on_btnWrite_clicked();
 
     void on_btnRead_clicked();
