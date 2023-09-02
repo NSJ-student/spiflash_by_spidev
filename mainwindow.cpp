@@ -1,6 +1,15 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+/*
+ * Jetson Orin SPI spinmap manual setting
+busybox devmem 0x0243d008 32 0x400
+busybox devmem 0x0243d018 32 0x458
+busybox devmem 0x0243d028 32 0x400
+busybox devmem 0x0243d038 32 0x400
+busybox devmem 0x0243d040 32 0x400
+*/
+
 #if defined(Q_OS_LINUX)
 #include <unistd.h> // close
 #include <fcntl.h>  // open
@@ -115,6 +124,8 @@ void MainWindow::on_rbOrinSPI_clicked(bool checked)
         ui->cbSpiDevice->clear();
         ui->cbSpiDevice->addItem("/dev/spidev0.0");
         ui->cbSpiDevice->addItem("/dev/spidev0.1");
+        ui->cbSpiDevice->addItem("/dev/spidev1.0");
+        ui->cbSpiDevice->addItem("/dev/spidev1.1");
         ui->cbSpiDevice->addItem("/dev/spidev2.0");
         ui->cbSpiDevice->addItem("/dev/spidev2.1");
     }
@@ -484,8 +495,8 @@ void MainWindow::onFinished()
     }
     else if(m_flashThread.flash_mode == SpiFlashing::MODE_WRITE)
     {
-        int address = ui->sbStartAddr->value();
-        uiUpdateHexaView(address, m_writeBuff.data(), m_writeBuff.size());
+//        int address = ui->sbStartAddr->value();
+//        uiUpdateHexaView(address, m_writeBuff.data(), m_writeBuff.size());
     }
     activateUI();
 }
@@ -502,7 +513,66 @@ void MainWindow::onCanceled()
 
 void MainWindow::onAppendLog(int start_addr, char *data, long size)
 {
-    uiUpdateHexaView(start_addr, data, size);
+    if(data == Q_NULLPTR)
+    {
+        return;
+    }
+    if(size == 0)
+    {
+        return;
+    }
+
+    int start_base = start_addr&0xFFFFFFF0;
+    int end_base = (start_addr+size)&0xFFFFFFF0;
+    int row_count = ((end_base-start_base)/16) + 1;
+
+    int offset = 0;
+    int i = 0;
+    for(i=0; i<row_count; i++)
+    {
+        int base = (start_addr&0xFFFFFFF0)+(i*16);
+        QString converted;
+
+        if((start_addr%16) == 0)
+        {
+            converted = converted + QStringLiteral("%1").arg(base, 8, 16, QLatin1Char('0')) + "|";
+        }
+
+        for(int cnt=0; cnt<16; cnt++)
+        {
+            /*
+            if((i==0) && (cnt < (start_addr&0x0F)))
+            {
+                converted = converted + QString("   ");
+            }
+            else
+            */
+            {
+                converted = converted + QString(" %1")
+                        .arg(QString::number(static_cast<uchar>(data[offset]), 16)
+                             .rightJustified(2, '0'));
+                offset++;
+            }
+
+            if(offset >= size)
+            {
+                break;
+            }
+        }
+
+        if((start_addr%16) == 0)
+        {
+            ui->pteBinaryView->appendPlainText(converted);
+        }
+        else
+        {
+            ui->pteBinaryView->insertPlainText(converted);
+        }
+        if(offset >= size)
+        {
+            break;
+        }
+    }
 }
 
 
@@ -958,12 +1028,9 @@ bool SpiFlashing::spiFlashWrite(int addr, char *buff, int length)
 bool SpiFlashing::spiFlashRead(int addr, char *buff, int length)
 {
     char tempBuff[length+4];
+    char readBuff[length+4];
 
-//    memset(tempBuff, 0, length+4);
-    for(int cnt=4; cnt<length; cnt++)
-    {
-        tempBuff[cnt] = cnt;
-    }
+    memset(tempBuff, 0, length+4);
     tempBuff[0] = SPIFLASH_READ;
     tempBuff[1] = (char)(addr >> 16);
     tempBuff[2] = (char)(addr >> 8);
@@ -972,10 +1039,11 @@ bool SpiFlashing::spiFlashRead(int addr, char *buff, int length)
     if (length > 0) {
         qDebug("spiflash_read: 0x%X, %d\n", addr, length);
 
-        if(!transfetSpi(tempBuff, buff, length+4))
+        if(!transfetSpi(tempBuff, readBuff, length+4))
         {
             return false;
         }
+        memcpy(buff, readBuff+4, length);
     }
 
     return true;
@@ -1052,7 +1120,7 @@ void SpiFlashing::run()
         int done = 0;
         int address = target_addr;
         char * buff = target_buff;
-        int length = 1024;
+        int length = 4;
 
         while(target_length>0)
         {
@@ -1085,7 +1153,7 @@ void SpiFlashing::run()
         int done = 0;
         int address = target_addr;
         char * buff = target_buff;
-        int length = 1024;
+        int length = 4;
 
         while(target_length>0)
         {
