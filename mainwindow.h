@@ -48,7 +48,7 @@
 #define SPIFLASH_READ_STATUS_REGISTER2      0x35
 #define SPIFLASH_WRITE_ENABLE               0x06
 #define SPIFLASH_FAST_READ                  0x0B
-#define SPIFLASH_SECTOR_ERASE               0x20
+#define SPIFLASH_SECTOR_ERASE               0x20    //0x7C//
 #define SPIFLASH_BLOCK_ERASE_32KB           0x52
 #define SPIFLASH_BLOCK_ERASE_64KB           0xD8
 #define SPIFLASH_CHIP_ERASE                 0x60
@@ -60,6 +60,7 @@
 
 #define SPIFLASH_STATUS_BUSY                0x01
 #define SPIFLASH_STATUS_WRITE_ENABLE        0x02
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
