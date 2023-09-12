@@ -116,7 +116,7 @@ signals:
     void canceled();
     void compare_error();
     void add_hexlog(int start_addr, char *data, long size);
-    void add_hexlog_error(int start_addr, char *data, long size);
+    void add_hexlog_error(int start_addr, char *read, char *ref, long size);
 
 private Q_SLOTS:
     void run();
@@ -169,6 +169,10 @@ public:
     {
         i2c_mode = mod;
     }
+    void cancel()
+    {
+        do_cancel = true;
+    }
     bool startI2cCheck(int fd);
     bool startI2cFlashRW(int fd, int id, QStringList &list);
 
@@ -203,7 +207,7 @@ public slots:
     void onCanceled();
     void onCompareError();
     void onAppendLog(int start_addr, char *data, long size);
-    void onAppendLog_error(int start_addr, char *data, long size);
+    void onAppendLog_error(int start_addr, char *read, char *ref, long size);
 
     void onI2cChecked(int row, int col, bool exist);
     void onI2cWorkFinished();
@@ -256,6 +260,8 @@ private slots:
     void on_btnCompareFileOpen_clicked();
 
     void on_btnCancelthread_clicked();
+
+    void on_btnShowFlashCompareLog_clicked(bool checked);
 
 private:
     Ui::MainWindow *ui;
