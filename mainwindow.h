@@ -74,7 +74,8 @@ public:
         MODE_NONE,
         MODE_READ,
         MODE_WRITE,
-        MODE_ERASE
+        MODE_ERASE,
+        MODE_COMPARE,
     };
 
     SpiFlashing(QObject *parent = Q_NULLPTR) :
@@ -82,6 +83,7 @@ public:
     {
         flash_mode = MODE_NONE;
         fd_spi = -1;
+        do_cancel = false;
     }
     ~SpiFlashing()
     {
@@ -97,9 +99,14 @@ public:
         bits = b;
         speed = s;
     }
+    void cancel()
+    {
+        do_cancel = true;
+    }
     bool startSpiFlashErase(int addr, int length);
     bool startSpiFlashWrite(int addr, char * buff, int length);
     bool startSpiFlashRead(int addr, char * buff, int length);
+    bool startSpiFlashComare(int addr, char * buff, int length);
 
     Mode    flash_mode;
 
@@ -107,7 +114,9 @@ signals:
     void set_progress(int current);
     void finished();
     void canceled();
+    void compare_error();
     void add_hexlog(int start_addr, char *data, long size);
+    void add_hexlog_error(int start_addr, char *data, long size);
 
 private Q_SLOTS:
     void run();
@@ -119,6 +128,7 @@ private:
     int     target_length;
     quint8  bits;
     quint32 speed;
+    bool    do_cancel;
 
     bool transfetSpi(char * write_buff, char * read_buff, int length);
     bool spiFlashWriteEnable();
@@ -144,6 +154,7 @@ public:
     {
         i2c_mode = MODE_NONE;
         fd_i2c = -1;
+        do_cancel = false;
     }
     ~I2cWork()
     {
@@ -172,6 +183,7 @@ private Q_SLOTS:
 
 private:
     Mode    i2c_mode;
+    bool    do_cancel;
     int     fd_i2c;
     int     slave_id;
     QStringList i2cList;
@@ -189,7 +201,9 @@ public slots:
     void onProgress(int current);
     void onFinished();
     void onCanceled();
+    void onCompareError();
     void onAppendLog(int start_addr, char *data, long size);
+    void onAppendLog_error(int start_addr, char *data, long size);
 
     void onI2cChecked(int row, int col, bool exist);
     void onI2cWorkFinished();
@@ -237,12 +251,19 @@ private slots:
 
     void on_btnLoadI2CData_clicked();
 
+    void on_btnCompare_clicked();
+
+    void on_btnCompareFileOpen_clicked();
+
+    void on_btnCancelthread_clicked();
+
 private:
     Ui::MainWindow *ui;
 
     // SPI working
     SpiFlashing m_flashThread;
     QByteArray m_writeBuff;
+    QByteArray m_compareBuff;
     char * m_readBuff;
 
     int     fd_spi;

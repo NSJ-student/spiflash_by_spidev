@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->tab_flash->setEnabled(false);
     ui->gbSpiTest->setEnabled(false);
+    ui->tabWidget->setCurrentIndex(0);
 
     fd_spi = -1;
     mode = 0;
@@ -39,8 +40,12 @@ MainWindow::MainWindow(QWidget *parent)
             this, SLOT(onFinished()));
     connect(&m_flashThread, SIGNAL(canceled()),
             this, SLOT(onCanceled()));
+    connect(&m_flashThread, SIGNAL(compare_error()),
+            this, SLOT(onCompareError()));
     connect(&m_flashThread, SIGNAL(add_hexlog(int, char*,long)),
             this, SLOT(onAppendLog(int,char*,long)));
+    connect(&m_flashThread, SIGNAL(add_hexlog_error(int, char*,long)),
+            this, SLOT(onAppendLog_error(int,char*,long)));
 
     QHeaderView* header = ui->tblI2cDevCheck->horizontalHeader();
     for(int cnt=0; cnt<16; cnt++)
@@ -131,6 +136,11 @@ void MainWindow::on_rbOrinSPI_clicked(bool checked)
     }
 }
 
+void MainWindow::on_btnCancelthread_clicked()
+{
+    m_flashThread.cancel();
+}
+
 void MainWindow::on_btnWrite_clicked()
 {
     QString path = QFileDialog::getOpenFileName(
@@ -209,6 +219,72 @@ void MainWindow::on_btnErase_clicked()
     }
 }
 
+void MainWindow::on_btnCompareFileOpen_clicked()
+{
+    QString path = QFileDialog::getOpenFileName(
+                this, ("Load Compare BIN File"),
+                Q_NULLPTR,
+                "BIN (*.bin);;All Files (*.*)");
+
+    if(path.isNull() || path.isEmpty())
+    {
+        return;
+    }
+
+    ui->lineComparePath->setText(path);
+    QFileInfo info(path);
+    ui->sbCompareSize->setValue(info.size());
+}
+
+void MainWindow::on_btnCompare_clicked()
+{
+    QString path = ui->lineComparePath->text();
+    if(path.isNull() || path.isEmpty())
+    {
+        return;
+    }
+
+    QFile file(path);
+    bool ret = file.open(QIODevice::ReadOnly);
+    if(!ret)
+    {
+        qDebug() << QString("bin_c: openFile() %1").arg(path);
+        return;
+    }
+
+    m_compareBuff = file.readAll();
+    file.close();
+    int compare_max_size = m_compareBuff.size();
+    if(compare_max_size <= 0)
+    {
+        qDebug() << QString("bin_c: can not read raw data");
+        return;
+    }
+
+    qDebug() << QString("bin_w: write %1").arg(path);
+
+    int address = ui->sbStartReadAddr->value();
+    int offset = ui->sbFileOffset->value();
+    int compare_size = ui->sbCompareSize->value();
+    ui->sbCompareErrorCount->setValue(0);
+
+    if(offset+compare_size > compare_max_size)
+    {
+        qDebug() << QString("bin_c: out of range");
+        return;
+    }
+
+    if(m_flashThread.startSpiFlashComare(address, m_compareBuff.data()+offset, compare_size))
+    {
+        ui->sbSize->setValue(compare_size);
+        ui->progressRW->setMaximum(compare_size);
+        ui->progressRW->setValue(0);
+        ui->pteBinaryView->clear();
+        deactivateUI();
+    }
+
+}
+
 void MainWindow::uiUpdateHexaView(int start_addr, const char *data, qint64 size)
 {
     if(data == Q_NULLPTR)
@@ -250,7 +326,7 @@ void MainWindow::uiUpdateHexaView(int start_addr, const char *data, qint64 size)
                 break;
             }
         }
-        ui->pteBinaryView->appendPlainText(converted);
+        ui->pteBinaryView->append(converted);
         if(offset >= size)
         {
             break;
@@ -511,6 +587,11 @@ void MainWindow::onCanceled()
     activateUI();
 }
 
+void MainWindow::onCompareError()
+{
+    ui->sbCompareErrorCount->setValue(ui->sbCompareErrorCount->value()+1);
+}
+
 void MainWindow::onAppendLog(int start_addr, char *data, long size)
 {
     if(data == Q_NULLPTR)
@@ -526,6 +607,7 @@ void MainWindow::onAppendLog(int start_addr, char *data, long size)
     int end_base = (start_addr+size)&0xFFFFFFF0;
     int row_count = ((end_base-start_base)/16) + 1;
 
+    ui->pteBinaryView->setTextColor(Qt::black);
     int offset = 0;
     int i = 0;
     for(i=0; i<row_count; i++)
@@ -562,7 +644,72 @@ void MainWindow::onAppendLog(int start_addr, char *data, long size)
 
         if((start_addr%16) == 0)
         {
-            ui->pteBinaryView->appendPlainText(converted);
+            ui->pteBinaryView->append(converted);
+        }
+        else
+        {
+            ui->pteBinaryView->insertPlainText(converted);
+        }
+        if(offset >= size)
+        {
+            break;
+        }
+    }
+}
+
+void MainWindow::onAppendLog_error(int start_addr, char *data, long size)
+{
+    if(data == Q_NULLPTR)
+    {
+        return;
+    }
+    if(size == 0)
+    {
+        return;
+    }
+
+    int start_base = start_addr&0xFFFFFFF0;
+    int end_base = (start_addr+size)&0xFFFFFFF0;
+    int row_count = ((end_base-start_base)/16) + 1;
+
+    ui->pteBinaryView->setTextColor(Qt::red);
+    int offset = 0;
+    int i = 0;
+    for(i=0; i<row_count; i++)
+    {
+        int base = (start_addr&0xFFFFFFF0)+(i*16);
+        QString converted;
+
+        if((start_addr%16) == 0)
+        {
+            converted = converted + QStringLiteral("%1").arg(base, 8, 16, QLatin1Char('0')) + "|";
+        }
+
+        for(int cnt=0; cnt<16; cnt++)
+        {
+            /*
+            if((i==0) && (cnt < (start_addr&0x0F)))
+            {
+                converted = converted + QString("   ");
+            }
+            else
+            */
+            {
+                converted = converted + QString(" %1")
+                        .arg(QString::number(static_cast<uchar>(data[offset]), 16)
+                             .rightJustified(2, '0'));
+                offset++;
+            }
+
+            if(offset >= size)
+            {
+                break;
+            }
+        }
+
+        if((start_addr%16) == 0)
+        {
+            ui->pteBinaryView->append(converted);
         }
         else
         {
@@ -945,6 +1092,7 @@ bool SpiFlashing::spiFlashErase(int addr, int length)
 
     if (addr == 0 && (length == (SPIFLASH_SECTOR_COUNT*SPIFLASH_SECTOR_SIZE)))
     {
+        qDebug("spiflash_erase: all chip\n");
         char write_buff = SPIFLASH_CHIP_ERASE;
         bool ret = transfetSpi(&write_buff, 0, 1);
         if(ret)
@@ -994,7 +1142,7 @@ bool SpiFlashing::spiFlashWrite(int addr, char *buff, int length)
     }
 
     while (length) {
-        qDebug("spiflash_write: 0x%X, %d\n", addr, length);
+//        qDebug("spiflash_write: 0x%X, %d\n", addr, length);
         if(!spiFlashWriteEnable())
         {
             return false;
@@ -1037,7 +1185,7 @@ bool SpiFlashing::spiFlashRead(int addr, char *buff, int length)
     tempBuff[3] = (char)(addr);
 
     if (length > 0) {
-        qDebug("spiflash_read: 0x%X, %d\n", addr, length);
+//        qDebug("spiflash_read: 0x%X, %d\n", addr, length);
 
         if(!transfetSpi(tempBuff, readBuff, length+4))
         {
@@ -1060,6 +1208,7 @@ bool SpiFlashing::startSpiFlashErase(int addr, int length)
     flash_mode = MODE_ERASE;
     target_addr = addr;
     target_length = length;
+    do_cancel = false;
     this->start();
     return true;
 }
@@ -1081,6 +1230,7 @@ bool SpiFlashing::startSpiFlashWrite(int addr, char *buff, int length)
     target_addr = addr;
     target_buff = buff;
     target_length = length;
+    do_cancel = false;
     this->start();
     return true;
 }
@@ -1102,6 +1252,29 @@ bool SpiFlashing::startSpiFlashRead(int addr, char *buff, int length)
     target_addr = addr;
     target_buff = buff;
     target_length = length;
+    do_cancel = false;
+    this->start();
+    return true;
+}
+
+bool SpiFlashing::startSpiFlashComare(int addr, char *buff, int length)
+{
+    if(fd_spi < 0)
+    {
+        qDebug() << "spi device not opened";
+        return false;
+    }
+    if((addr&0x0F)>0)
+    {
+        qDebug() << "start addr not aligned";
+        return false;
+    }
+
+    flash_mode = MODE_COMPARE;
+    target_addr = addr;
+    target_buff = buff;
+    target_length = length;
+    do_cancel = false;
     this->start();
     return true;
 }
@@ -1124,6 +1297,11 @@ void SpiFlashing::run()
 
         while(target_length>0)
         {
+            if(do_cancel)
+            {
+                emit canceled();
+                return;
+            }
             if(length > target_length)
             {
                 length = target_length;
@@ -1142,7 +1320,6 @@ void SpiFlashing::run()
             emit set_progress(done);
             emit add_hexlog(address, buff, length);
 
-            qDebug() << "done" << target_length;
             address += length;
             buff += length;
             target_length -= length;
@@ -1157,6 +1334,11 @@ void SpiFlashing::run()
 
         while(target_length>0)
         {
+            if(do_cancel)
+            {
+                emit canceled();
+                return;
+            }
             if(length > target_length)
             {
                 length = target_length;
@@ -1175,7 +1357,6 @@ void SpiFlashing::run()
             emit set_progress(done);
             emit add_hexlog(address, buff, length);
 
-            qDebug() << "done" << target_length;
             address += length;
             buff += length;
             target_length -= length;
@@ -1187,6 +1368,58 @@ void SpiFlashing::run()
         {
             emit canceled();
             return;
+        }
+    }
+    else if(flash_mode == MODE_COMPARE)
+    {
+        int done = 0;
+        int address = target_addr;
+        char * buff = target_buff;
+        int length = 4;
+
+        while(target_length>0)
+        {
+            if(do_cancel)
+            {
+                emit canceled();
+                return;
+            }
+            if(length > target_length)
+            {
+                length = target_length;
+            }
+
+            char read_buff[length];
+            if(!spiFlashRead(address, read_buff, length))
+            {
+                retry++;
+                if(retry > 5)
+                {
+                    emit canceled();
+                    return;
+                }
+                continue;
+            }
+
+            if(memcmp(buff, read_buff, length) == 0)
+            {
+                emit add_hexlog(address, read_buff, length);
+            }
+            else
+            {
+                emit compare_error();
+                emit add_hexlog_error(address, read_buff, length);
+                qDebug()    << QString("compare error: 0x%1").arg(address,8,16,QChar('0'));
+                            << QString("file: 0x%1").arg(((uint32_t *)(buff))[0],8,16,QChar('0'));
+                            << QString("read: 0x%1").arg(((uint32_t *)(read_buff))[0],8,16,QChar('0'));
+            }
+
+            done += length;
+            emit set_progress(done);
+
+            address += length;
+            buff += length;
+            target_length -= length;
         }
     }
 

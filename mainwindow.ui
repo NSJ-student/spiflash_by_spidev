@@ -15,10 +15,17 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item alignment="Qt::AlignRight">
+     <widget class="QPushButton" name="btnCancelthread">
+      <property name="text">
+       <string>CANCEL</string>
+      </property>
+     </widget>
+    </item>
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -448,6 +455,174 @@
          </widget>
         </item>
         <item>
+         <widget class="QFrame" name="frame_7">
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_6">
+           <item row="1" column="3">
+            <widget class="QSpinBox" name="sbFileOffset">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="buttonSymbols">
+              <enum>QAbstractSpinBox::NoButtons</enum>
+             </property>
+             <property name="prefix">
+              <string>0x</string>
+             </property>
+             <property name="maximum">
+              <number>2147483647</number>
+             </property>
+             <property name="singleStep">
+              <number>16</number>
+             </property>
+             <property name="displayIntegerBase">
+              <number>16</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_15">
+             <property name="text">
+              <string>File Offset</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_14">
+             <property name="text">
+              <string>Start Addr</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="sbStartReadAddr">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="buttonSymbols">
+              <enum>QAbstractSpinBox::NoButtons</enum>
+             </property>
+             <property name="prefix">
+              <string>0x</string>
+             </property>
+             <property name="maximum">
+              <number>2147483647</number>
+             </property>
+             <property name="singleStep">
+              <number>16</number>
+             </property>
+             <property name="displayIntegerBase">
+              <number>16</number>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_18">
+             <property name="text">
+              <string>File Path</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>Size</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="5">
+            <widget class="QSpinBox" name="sbCompareSize">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="buttonSymbols">
+              <enum>QAbstractSpinBox::NoButtons</enum>
+             </property>
+             <property name="prefix">
+              <string/>
+             </property>
+             <property name="maximum">
+              <number>2147483647</number>
+             </property>
+             <property name="singleStep">
+              <number>16</number>
+             </property>
+             <property name="displayIntegerBase">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="5">
+            <widget class="QPushButton" name="btnCompare">
+             <property name="text">
+              <string>Compare</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="5">
+            <widget class="QPushButton" name="btnCompareFileOpen">
+             <property name="text">
+              <string>Open</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="4">
+            <widget class="QLineEdit" name="lineComparePath">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>Un-Matched</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1" colspan="2">
+            <widget class="QSpinBox" name="sbCompareErrorCount">
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+             <property name="buttonSymbols">
+              <enum>QAbstractSpinBox::NoButtons</enum>
+             </property>
+             <property name="prefix">
+              <string/>
+             </property>
+             <property name="maximum">
+              <number>2147483647</number>
+             </property>
+             <property name="singleStep">
+              <number>16</number>
+             </property>
+             <property name="displayIntegerBase">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
          <widget class="QProgressBar" name="progressRW">
           <property name="value">
            <number>0</number>
@@ -506,7 +681,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QPlainTextEdit" name="pteBinaryView">
+            <widget class="QTextEdit" name="pteBinaryView">
              <property name="font">
               <font>
                <family>Courier New</family>
@@ -514,9 +689,6 @@
              </property>
              <property name="frameShape">
               <enum>QFrame::NoFrame</enum>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -706,11 +878,11 @@ QTableWidget::item:selected {
               <property name="selectionMode">
                <enum>QAbstractItemView::SingleSelection</enum>
               </property>
-              <attribute name="horizontalHeaderMinimumSectionSize">
-               <number>32</number>
-              </attribute>
               <attribute name="horizontalHeaderDefaultSectionSize">
                <number>50</number>
+              </attribute>
+              <attribute name="horizontalHeaderMinimumSectionSize">
+               <number>32</number>
               </attribute>
               <attribute name="verticalHeaderVisible">
                <bool>false</bool>
