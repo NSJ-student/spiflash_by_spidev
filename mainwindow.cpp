@@ -739,8 +739,8 @@ void MainWindow::onAppendLog_error(int start_addr, char *read, char *ref, long s
 
     QString log = QString("compare error: addr=0x%1/read=0x%2/ref=%3")
             .arg(start_addr,8,16,QChar('0'))
-            .arg(str_read)
-            .arg(str_ref);
+            .arg(str_read.toUpper())
+            .arg(str_ref.toUpper());
 
     ui->textFlashResult->append(log);
 }
