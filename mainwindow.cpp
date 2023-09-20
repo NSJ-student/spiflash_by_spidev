@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QTime>
 
 /*
  * Jetson Orin SPI spinmap manual setting
@@ -1108,14 +1109,14 @@ bool SpiFlashing::spiFlashExecuteCmd(char cmd, int addr)
 
 bool SpiFlashing::spiFlashErase(int addr, int length)
 {
-    if(!spiFlashWriteEnable())
-    {
-        return false;
-    }
-
     if (addr == 0 && (length == (SPIFLASH_SECTOR_COUNT*SPIFLASH_SECTOR_SIZE)))
     {
         qDebug("spiflash_erase: all chip\n");
+        if(!spiFlashWriteEnable())
+        {
+            return false;
+        }
+
         char write_buff = SPIFLASH_CHIP_ERASE;
         bool ret = transfetSpi(&write_buff, 0, 1);
         if(ret)
@@ -1127,14 +1128,20 @@ bool SpiFlashing::spiFlashErase(int addr, int length)
 
     qDebug("spiflash_erase: 0x%X, %d\n", addr, length);
     addr &= ~0xFFFU;
+
     int total_size = length;
     while (length)
     {
+        if(!spiFlashWriteEnable())
+        {
+            return false;
+        }
+
         if(!spiFlashExecuteCmd(SPIFLASH_SECTOR_ERASE, addr))
         {
             return false;
         }
-        QThread::usleep(SPIFLASH_TSE_MAXIMUM);
+        QThread::msleep(SPIFLASH_TSE_MAXIMUM/1000);
         addr += SPIFLASH_SECTOR_SIZE;
         if (length > SPIFLASH_SECTOR_SIZE)
         {
@@ -1144,6 +1151,8 @@ bool SpiFlashing::spiFlashErase(int addr, int length)
         {
             length = 0;
         }
+
+        qDebug() << "   " << QTime::currentTime().toString("hh:mm:ss.zzz") << QString::number(addr,16);
         emit set_progress(total_size-length);
     }
 
