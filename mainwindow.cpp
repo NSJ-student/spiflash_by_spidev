@@ -10,6 +10,11 @@ busybox devmem 0x0243d028 32 0x400
 busybox devmem 0x0243d038 32 0x400
 busybox devmem 0x0243d040 32 0x400
 */
+/*
+ *  Jetson TX2 preset
+ * 1. cd /lib/modules/4.9.299-tegra/kernel/drivers/spi/
+ * 2. sudo insmod spidev.ko
+ */
 
 #if defined(Q_OS_LINUX)
 #include <unistd.h> // close
@@ -34,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
     bits = 8;
     speed = 500000;
     m_readBuff = Q_NULLPTR;
+    m_readBuffLen = 0;
 
     connect(&m_flashThread, SIGNAL(set_progress(int)),
             this, SLOT(onProgress(int)));
@@ -190,8 +196,21 @@ void MainWindow::on_btnRead_clicked()
 {
     int address = ui->sbStartAddr->value();
     int target_size = ui->sbSize->value();
+    if(target_size == 0)
+    {
+        qDebug() << "target size = 0";
+        return;
+    }
+
+    if(m_readBuff)
+    {
+        delete m_readBuff;
+        m_readBuff = Q_NULLPTR;
+        m_readBuffLen = 0;
+    }
 
     m_readBuff = new char[target_size];
+    m_readBuffLen = target_size;
     if(m_flashThread.startSpiFlashRead(address, m_readBuff, target_size))
     {
         ui->progressRW->setMaximum(target_size);
@@ -205,6 +224,7 @@ void MainWindow::on_btnRead_clicked()
         {
             delete m_readBuff;
             m_readBuff = Q_NULLPTR;
+            m_readBuffLen = 0;
         }
     }
 }
@@ -339,6 +359,46 @@ void MainWindow::uiUpdateHexaView(int start_addr, const char *data, qint64 size)
         if(offset >= size)
         {
             break;
+        }
+    }
+}
+
+void MainWindow::on_btnSave_clicked()
+{
+    if((m_readBuff == NULL) || (m_readBuffLen == 0))
+    {
+        qDebug() << QString("no data to save");
+        return;
+    }
+    QString save_path =
+             QFileDialog::getSaveFileName(
+                this,
+                ("Save SPI Read File"),
+                Q_NULLPTR,
+                "SPI File (*.bin);;All Files (*.*)");
+
+    if(!save_path.isNull() && !save_path.isEmpty())
+    {
+        QFile file(save_path);
+        bool ret = file.open(QIODevice::WriteOnly);
+        if(!ret)
+        {
+            qDebug() <<  QString("spi file open fail - %1")
+                               .arg(save_path);
+            return;
+        }
+
+        qint64 written = file.write(m_readBuff, m_readBuffLen);
+
+        file.close();
+
+        if(written != m_readBuffLen)
+        {
+            qDebug() << QString("save spi binary failed: %1").arg(save_path);
+        }
+        else
+        {
+            qDebug() << QString("save spi binary complete: %1").arg(save_path);
         }
     }
 }
@@ -573,11 +633,14 @@ void MainWindow::onFinished()
     qDebug() << "done";
     if(m_flashThread.flash_mode == SpiFlashing::MODE_READ)
     {
+        /*
         if(m_readBuff)
         {
             delete m_readBuff;
             m_readBuff = Q_NULLPTR;
+            m_readBuffLen = 0;
         }
+        */
     }
     else if(m_flashThread.flash_mode == SpiFlashing::MODE_WRITE)
     {
@@ -593,6 +656,7 @@ void MainWindow::onCanceled()
     {
         delete m_readBuff;
         m_readBuff = Q_NULLPTR;
+        m_readBuffLen = 0;
     }
     activateUI();
 }

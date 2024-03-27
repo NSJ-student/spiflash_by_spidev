@@ -263,6 +263,8 @@ private slots:
 
     void on_btnShowFlashCompareLog_clicked(bool checked);
 
+    void on_btnSave_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -271,6 +273,7 @@ private:
     QByteArray m_writeBuff;
     QByteArray m_compareBuff;
     char * m_readBuff;
+    int m_readBuffLen;
 
     int     fd_spi;
     quint32 mode;
@@ -286,7 +289,6 @@ private:
     void deactivateUI();
     void uiUpdateHexaView(int start_addr, const char *data, qint64 size);
     bool transfetSpi(char * write_buff, char * read_buff, int length);
-
 };
 
 #endif // MAINWINDOW_H
