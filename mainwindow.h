@@ -265,6 +265,12 @@ private slots:
 
     void on_btnSave_clicked();
 
+    void on_btnReadManufacturerId_clicked();
+
+    void on_btnReadJedecId_clicked();
+
+    void on_btnReadUniqueId_clicked();
+
 private:
     Ui::MainWindow *ui;
 

@@ -148,6 +148,21 @@ void MainWindow::on_btnCancelthread_clicked()
     m_flashThread.cancel();
 }
 
+void MainWindow::on_btnReadManufacturerId_clicked()
+{
+    ui->txtSpiWriteData->setText("90 00 00 00 00 00");
+}
+
+void MainWindow::on_btnReadJedecId_clicked()
+{
+    ui->txtSpiWriteData->setText("9F 00 00 00");
+}
+
+void MainWindow::on_btnReadUniqueId_clicked()
+{
+    ui->txtSpiWriteData->setText("9F 00 00 00 00 00");
+}
+
 void MainWindow::on_btnWrite_clicked()
 {
     QString path = QFileDialog::getOpenFileName(
