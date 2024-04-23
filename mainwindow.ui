@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>610</width>
-    <height>637</height>
+    <height>656</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -410,12 +410,9 @@
          <number>9</number>
         </property>
         <item>
-         <widget class="QFrame" name="frame">
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
+         <widget class="QGroupBox" name="groupBox">
+          <property name="title">
+           <string>Simple Control</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
@@ -483,9 +480,9 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="btnWrite">
+            <widget class="QPushButton" name="btnWriteFile">
              <property name="text">
-              <string>Write</string>
+              <string>Write File</string>
              </property>
             </widget>
            </item>
@@ -509,7 +506,7 @@
         <item>
          <widget class="QGroupBox" name="groupBox_7">
           <property name="title">
-           <string>Compare</string>
+           <string>Custom Control</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_6">
            <item row="1" column="3">
@@ -547,7 +544,7 @@
            <item row="1" column="0">
             <widget class="QLabel" name="label_14">
              <property name="text">
-              <string>Read Addr</string>
+              <string>Start Addr</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -555,7 +552,7 @@
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QSpinBox" name="sbStartReadAddr">
+            <widget class="QSpinBox" name="sbStartCustomAddr">
              <property name="alignment">
               <set>Qt::AlignCenter</set>
              </property>
@@ -583,6 +580,20 @@
              </property>
             </widget>
            </item>
+           <item row="0" column="5">
+            <widget class="QPushButton" name="btnCustomFileOpen">
+             <property name="text">
+              <string>Open</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="4">
+            <widget class="QLineEdit" name="lineCustomFilePath">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
            <item row="1" column="4">
             <widget class="QLabel" name="label_16">
              <property name="text">
@@ -594,7 +605,7 @@
             </widget>
            </item>
            <item row="1" column="5">
-            <widget class="QSpinBox" name="sbCompareSize">
+            <widget class="QSpinBox" name="sbCustomSize">
              <property name="alignment">
               <set>Qt::AlignCenter</set>
              </property>
@@ -615,79 +626,102 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="5">
-            <widget class="QPushButton" name="btnCompare">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
+           <item row="2" column="0" colspan="6">
+            <widget class="QFrame" name="frame_8">
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
              </property>
-             <property name="text">
-              <string>Compare</string>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
              </property>
-            </widget>
-           </item>
-           <item row="0" column="5">
-            <widget class="QPushButton" name="btnCompareFileOpen">
-             <property name="text">
-              <string>Open</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1" colspan="4">
-            <widget class="QLineEdit" name="lineComparePath">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_17">
-             <property name="text">
-              <string>Un-Matched</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1" colspan="2">
-            <widget class="QSpinBox" name="sbCompareErrorCount">
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-             <property name="buttonSymbols">
-              <enum>QAbstractSpinBox::NoButtons</enum>
-             </property>
-             <property name="prefix">
-              <string/>
-             </property>
-             <property name="maximum">
-              <number>2147483647</number>
-             </property>
-             <property name="singleStep">
-              <number>16</number>
-             </property>
-             <property name="displayIntegerBase">
-              <number>10</number>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="4">
-            <widget class="QToolButton" name="btnShowFlashCompareLog">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="text">
-              <string>LOG</string>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_15">
+              <property name="leftMargin">
+               <number>5</number>
+              </property>
+              <property name="topMargin">
+               <number>5</number>
+              </property>
+              <property name="rightMargin">
+               <number>5</number>
+              </property>
+              <property name="bottomMargin">
+               <number>5</number>
+              </property>
+              <item>
+               <widget class="QPushButton" name="btnCustomCompare">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Compare</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnCustomWrite">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Write</string>
+                </property>
+               </widget>
+              </item>
+              <item alignment="Qt::AlignRight">
+               <widget class="QLabel" name="label_17">
+                <property name="text">
+                 <string>Un-Matched</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="sbCompareErrorCount">
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+                <property name="readOnly">
+                 <bool>true</bool>
+                </property>
+                <property name="buttonSymbols">
+                 <enum>QAbstractSpinBox::NoButtons</enum>
+                </property>
+                <property name="prefix">
+                 <string/>
+                </property>
+                <property name="maximum">
+                 <number>2147483647</number>
+                </property>
+                <property name="singleStep">
+                 <number>16</number>
+                </property>
+                <property name="displayIntegerBase">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QToolButton" name="btnShowFlashCompareLog">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>LOG</string>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </widget>
            </item>
           </layout>
@@ -815,6 +849,19 @@ p, li { white-space: pre-wrap; }
            <property name="bottomMargin">
             <number>0</number>
            </property>
+           <item>
+            <widget class="QCheckBox" name="cbDebug">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Debug</string>
+             </property>
+            </widget>
+           </item>
            <item>
             <widget class="QPushButton" name="btnSave">
              <property name="text">

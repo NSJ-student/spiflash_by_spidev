@@ -219,7 +219,7 @@ private slots:
 
     void on_rbOrinSPI_clicked(bool checked);
 
-    void on_btnWrite_clicked();
+    void on_btnCustomWrite_clicked();
 
     void on_btnRead_clicked();
 
@@ -255,9 +255,9 @@ private slots:
 
     void on_btnLoadI2CData_clicked();
 
-    void on_btnCompare_clicked();
+    void on_btnCustomCompare_clicked();
 
-    void on_btnCompareFileOpen_clicked();
+    void on_btnCustomFileOpen_clicked();
 
     void on_btnCancelthread_clicked();
 
@@ -270,6 +270,10 @@ private slots:
     void on_btnReadJedecId_clicked();
 
     void on_btnReadUniqueId_clicked();
+
+    void on_btnWriteFile_clicked();
+
+    void on_cbDebug_clicked(bool checked);
 
 private:
     Ui::MainWindow *ui;

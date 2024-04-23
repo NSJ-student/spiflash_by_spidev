@@ -25,6 +25,8 @@ busybox devmem 0x0243d040 32 0x400
 #include <linux/i2c.h>
 #endif
 
+static bool gb_debug = false;
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -160,10 +162,10 @@ void MainWindow::on_btnReadJedecId_clicked()
 
 void MainWindow::on_btnReadUniqueId_clicked()
 {
-    ui->txtSpiWriteData->setText("9F 00 00 00 00 00");
+    ui->txtSpiWriteData->setText("4B 00 00 00 00 00");
 }
 
-void MainWindow::on_btnWrite_clicked()
+void MainWindow::on_btnWriteFile_clicked()
 {
     QString path = QFileDialog::getOpenFileName(
                 this, ("Load Write BIN File"),
@@ -258,7 +260,7 @@ void MainWindow::on_btnErase_clicked()
     }
 }
 
-void MainWindow::on_btnCompareFileOpen_clicked()
+void MainWindow::on_btnCustomFileOpen_clicked()
 {
     QString path = QFileDialog::getOpenFileName(
                 this, ("Load Compare BIN File"),
@@ -270,14 +272,14 @@ void MainWindow::on_btnCompareFileOpen_clicked()
         return;
     }
 
-    ui->lineComparePath->setText(path);
+    ui->lineCustomFilePath->setText(path);
     QFileInfo info(path);
-    ui->sbCompareSize->setValue(info.size());
+    ui->sbCustomSize->setValue(info.size());
 }
 
-void MainWindow::on_btnCompare_clicked()
+void MainWindow::on_btnCustomCompare_clicked()
 {
-    QString path = ui->lineComparePath->text();
+    QString path = ui->lineCustomFilePath->text();
     if(path.isNull() || path.isEmpty())
     {
         return;
@@ -302,9 +304,9 @@ void MainWindow::on_btnCompare_clicked()
 
     qDebug() << QString("bin_w: write %1").arg(path);
 
-    int address = ui->sbStartReadAddr->value();
+    int address = ui->sbStartCustomAddr->value();
     int offset = ui->sbFileOffset->value();
-    int compare_size = ui->sbCompareSize->value();
+    int compare_size = ui->sbCustomSize->value();
     ui->sbCompareErrorCount->setValue(0);
 
     if(offset+compare_size > compare_max_size)
@@ -317,6 +319,59 @@ void MainWindow::on_btnCompare_clicked()
     {
         ui->sbSize->setValue(compare_size);
         ui->progressRW->setMaximum(compare_size);
+        ui->progressRW->setValue(0);
+        ui->pteBinaryView->clear();
+        deactivateUI();
+    }
+
+}
+
+void MainWindow::on_btnCustomWrite_clicked()
+{
+    QString path = ui->lineCustomFilePath->text();
+    if(path.isNull() || path.isEmpty())
+    {
+        return;
+    }
+
+    int target_size = ui->sbCustomSize->value();
+    if(target_size == 0)
+    {
+        qDebug() << "target size = 0";
+        return;
+    }
+
+    QFile file(path);
+    bool ret = file.open(QIODevice::ReadOnly);
+    if(!ret)
+    {
+        qDebug() << QString("bin_w: openFile() %1").arg(path);
+        return;
+    }
+
+    m_writeBuff = file.readAll();
+    file.close();
+    int file_size = m_writeBuff.size();
+    if(file_size <= 0)
+    {
+        qDebug() << QString("bin_w: can not read raw data");
+        return;
+    }
+
+    int offset = ui->sbFileOffset->value();
+    if(file_size < target_size+offset)
+    {
+        qDebug() << QString("bin_w: file size is smaller than target_size");
+        return;
+    }
+
+    qDebug() << QString("bin_w: write %1").arg(path);
+
+    int address = ui->sbStartCustomAddr->value();
+    if(m_flashThread.startSpiFlashWrite(address, m_writeBuff.data()+offset, target_size))
+    {
+        ui->sbSize->setValue(target_size);
+        ui->progressRW->setMaximum(target_size);
         ui->progressRW->setValue(0);
         ui->pteBinaryView->clear();
         deactivateUI();
@@ -598,6 +653,11 @@ void MainWindow::on_btnSpiTestExecute_clicked()
 #endif
 }
 
+void MainWindow::on_cbDebug_clicked(bool checked)
+{
+    gb_debug = checked;
+}
+
 bool MainWindow::transfetSpi(char *write_buff, char *read_buff, int length)
 {
     if(fd_spi < 0)
@@ -754,10 +814,12 @@ void MainWindow::onAppendLog_error(int start_addr, char *read, char *ref, long s
     }
     if(ref == Q_NULLPTR)
     {
+        delete read;
         return;
     }
     if(size == 0)
     {
+        delete read;
         return;
     }
 
@@ -823,6 +885,7 @@ void MainWindow::onAppendLog_error(int start_addr, char *read, char *ref, long s
             .arg(str_ref.toUpper());
 
     ui->textFlashResult->append(log);
+    delete read;
 }
 
 
@@ -1255,7 +1318,7 @@ bool SpiFlashing::spiFlashWrite(int addr, char *buff, int length)
     }
 
     while (length) {
-//        qDebug("spiflash_write: 0x%X, %d\n", addr, length);
+        if(gb_debug) qDebug("spiflash_write: 0x%X, %d\n", addr, length);
         if(!spiFlashWriteEnable())
         {
             return false;
@@ -1298,13 +1361,19 @@ bool SpiFlashing::spiFlashRead(int addr, char *buff, int length)
     tempBuff[3] = (char)(addr);
 
     if (length > 0) {
-//        qDebug("spiflash_read: 0x%X, %d\n", addr, length);
 
         if(!transfetSpi(tempBuff, readBuff, length+4))
         {
+            if(gb_debug) qDebug("spiflash_read: 0x%X, %d", addr, length);
             return false;
         }
         memcpy(buff, readBuff+4, length);
+        if(gb_debug)
+        {
+            QString tmp =  QString(QByteArray(buff, length).toHex(' ').toUpper());
+            qDebug("spiflash_read: 0x%X, %d", addr, length);
+            qDebug() << tmp;
+        }
     }
 
     return true;
@@ -1502,12 +1571,13 @@ void SpiFlashing::run()
                 length = target_length;
             }
 
-            char read_buff[length];
+            char * read_buff = new char[length];
             if(!spiFlashRead(address, read_buff, length))
             {
                 retry++;
                 if(retry > 5)
                 {
+                    delete read_buff;
                     emit canceled();
                     return;
                 }
@@ -1516,7 +1586,8 @@ void SpiFlashing::run()
 
             if(memcmp(buff, read_buff, length) == 0)
             {
-                emit add_hexlog(address, read_buff, length);
+                emit add_hexlog(address, buff, length);
+                delete read_buff;
             }
             else
             {
