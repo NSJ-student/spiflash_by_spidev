@@ -26,6 +26,7 @@ busybox devmem 0x0243d040 32 0x400
 #endif
 
 static bool gb_debug = false;
+static int  gu_spi_rw_unit = 4;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -42,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     speed = 500000;
     m_readBuff = Q_NULLPTR;
     m_readBuffLen = 0;
+    gu_spi_rw_unit = ui->sbSpiRWUnit->value();
 
     connect(&m_flashThread, SIGNAL(set_progress(int)),
             this, SLOT(onProgress(int)));
@@ -143,6 +145,11 @@ void MainWindow::on_rbOrinSPI_clicked(bool checked)
         ui->cbSpiDevice->addItem("/dev/spidev2.0");
         ui->cbSpiDevice->addItem("/dev/spidev2.1");
     }
+}
+
+void MainWindow::on_sbSpiRWUnit_valueChanged(int arg1)
+{
+    gu_spi_rw_unit = arg1;
 }
 
 void MainWindow::on_btnCancelthread_clicked()
@@ -1475,7 +1482,7 @@ void SpiFlashing::run()
         int done = 0;
         int address = target_addr;
         char * buff = target_buff;
-        int length = 4;
+        int length = gu_spi_rw_unit;
 
         while(target_length>0)
         {
@@ -1557,7 +1564,7 @@ void SpiFlashing::run()
         int done = 0;
         int address = target_addr;
         char * buff = target_buff;
-        int length = 4;
+        int length = gu_spi_rw_unit;
 
         while(target_length>0)
         {

@@ -275,6 +275,8 @@ private slots:
 
     void on_cbDebug_clicked(bool checked);
 
+    void on_sbSpiRWUnit_valueChanged(int arg1);
+
 private:
     Ui::MainWindow *ui;
 
